@@ -42,10 +42,65 @@ resource "azurerm_virtual_network" "abc-vn" {
 
 }
 
-resource "azurerm_subnet" "abc-subnet" {
+resource "azurerm_subnet" "abc-subnet1" {
   name                 = "abc-subnet1"
   resource_group_name  = azurerm_resource_group.abc-rg.name
   virtual_network_name = azurerm_virtual_network.abc-vn.name
-  address_prefixes    = ["10.123.1.0/24"]
+  address_prefixes     = ["10.123.1.0/24"]
 
 }
+
+resource "azurerm_network_security_group" "abc-sg" {
+  name                = "abc-sg"
+  location            = azurerm_resource_group.abc-rg.location
+  resource_group_name = azurerm_resource_group.abc-rg.name
+
+  tags = {
+    environment = "dev"
+  }
+
+}
+
+resource "azurerm_network_security_rule" "abc-dev-rule" {
+  name                        = "abc-dev-rule"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "*"
+  source_port_range           = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = azurerm_resource_group.abc-rg.name
+  network_security_group_name = azurerm_network_security_group.abc-sg.name
+}
+
+resource "azurerm_subnet_network_security_group_association" "example" {
+  subnet_id                 = azurerm_subnet.abc-subnet1.id
+  network_security_group_id = azurerm_network_security_group.abc-sg.id
+}
+
+resource "azurerm_public_ip" "abc-ip1" {
+  name                = "abc-ip1"
+  resource_group_name = azurerm_resource_group.abc-rg.name
+  location            = azurerm_resource_group.abc-rg.location
+  allocation_method   = "Dynamic"
+
+  tags = {
+    environment = "dev"
+  }
+}
+
+resource "azurerm_network_interface" "abc-nic" {
+  name                = "abc-nic"
+  location            = azurerm_resource_group.abc-rg.location
+  resource_group_name = azurerm_resource_group.abc-rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.abc-subnet1.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.abc-ip1.id
+  }
+}
+
