@@ -133,7 +133,7 @@ resource "azurerm_linux_virtual_machine" "abc-vm" {
   }
 
   provisioner "local-exec" {
-    command = templatefile("${var.host_os}-ssh-script.tpl",{
+    command = templatefile("linux-ssh-script.tpl",{
       hostname = self.public_ip_address
       user = self.admin_username
       identityfile = "${abspath(path.root)}/id_rsa"
