@@ -131,4 +131,28 @@ resource "azurerm_linux_virtual_machine" "abc-vm" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
+  provisioner "local-exec" {
+    command = templatefile("${var.host_os}-ssh-script.tpl",{
+      hostname = self.public_ip_address
+      user = self.admin_username
+      identityfile = "${abspath(path.root)}/id_rsa"
+    })
+    interpreter = ["/bin/bash", "-c"]
+  }
+
+  tags = {
+    environment = "dev"
+  }
+
+}
+
+data "azurerm_public_ip" "abc-ip1-data" {
+  name = azurerm_public_ip.abc-ip1.name
+  resource_group_name = azurerm_resource_group.abc-rg.name
+
+}
+
+output "public_ip_address" {
+  value = "${azurerm_linux_virtual_machine.abc-vm.name}: ${data.azurerm_public_ip.abc-ip1-data.ip_address}"
 }
